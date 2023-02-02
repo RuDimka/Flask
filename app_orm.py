@@ -33,6 +33,8 @@ class QuoteModel(db.Model):
             "text": self.text
         }
 
+class AuthorModel(db.Model):
+    
 
 # Сериализация: lis[quotes] --> list[dict] --> str(JSON)
 @app.route("/quotes")
