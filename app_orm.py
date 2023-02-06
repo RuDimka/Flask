@@ -71,6 +71,13 @@ class AuthorModel(db.Model):
         }
 
 
+@app.route("/quotes/<int:id>/author")
+def get_author(author):
+    quote = AuthorModel.query.get(author)
+    if quote is None:
+        return f"Quotes with author={author} not found", 404
+    return quote.to_dict(), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True)
