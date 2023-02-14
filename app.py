@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).parent
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{BASE_DIR / 'main_new.db'}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{BASE_DIR / 'main.db'}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -17,7 +17,7 @@ migrate = Migrate(app, db)
 class AuthorModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32), unique=True)
-    quotes = db.relationship('QuoteModel', backref='author', lazy='dynamic', cascade="all, delete-orphan")
+    quotes = db.relationship('QuoteModel', backref='author', lazy='dynamic', cascade="all, delete-orphan") #lazy='dynamic' - постоянная связь двух таблиц
 
     def __init__(self, name):
         self.name = name
@@ -56,30 +56,41 @@ def get_authors():
     return authors_dict
 
 
+# @app.route("/authors/<int:authors_id>")
+# def get_author_by_id(authors_id):
+#     authors = AuthorModel.query.all(authors_id)
+#     authors_dict = []
+#     for author in authors:
+#         authors_dict.append(author.to_dict())
+#         return {"error": f"Quotes with author={author} not found"}, 404
+#     return authors.to_dict, 201
+
 @app.route("/authors/<int:authors_id>")
 def get_author_by_id(authors_id):
-    author = AuthorModel.query.all()
+    author = AuthorModel.query.get(authors_id)
     if author is None:
-        return {"error": f"Quotes with author={author} not found"}, 404
+        return {"error": f"Author with id={id} not found"}, 404
     return author.to_dict, 201
 
 
 @app.route("/authors", methods=["POST"])
 def create_author():
     author_data = request.json
+    print(author_data, "!!!")
     author = AuthorModel(author_data["name"])
     db.session.add(author)
     db.session.commit()
     return author.to_dict(), 201
 
 
-@app.route("/authors", methods=["DELETE"])
-def delete_all_authors():
-    authors = AuthorModel.query.all()
-    for author in authors:
-        authors.remove(author)
-        return f"Quote with authors {authors} is deleted.", 200
-    abort(404, f"Указанного authors={authors}, не существует")
+@app.route("/authors/<int:authors_id>", methods=["DELETE"])
+def delete_all_authors(authors_id):
+    author = AuthorModel.query.get(authors_id)
+    if author is None:
+        return f"Author with id={authors_id} not found.", 404
+    db.session.delete(author)
+    db.session.commit()
+    return f"Author with id={authors_id} is delete", 200
 
 
 # Resource: Quote
@@ -100,9 +111,6 @@ def get_quotes_id(id):
     return quote.to_dict, 200
 
 #help(SQLAlchemy)
-
-
-
 
 
 if __name__ == "__main__":
